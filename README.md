@@ -21,10 +21,13 @@ GitHub Repository:
 ```
 
 ---
-## Architecture that i used
-## Feature-based frontend architecture
-- **Component-based UI architecture**
-- **Service layer for API integration**
+## Architecture
+
+This project follows a feature-based frontend architecture with:
+
+- Component-based UI structure
+- Service layer for API integration
+- Modular and scalable folder organization
 
 ## Tech Stack
 
