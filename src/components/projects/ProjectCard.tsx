@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { FolderKanban } from "lucide-react";
 import { Project } from "@/features/projects/projects.types";
+import { motion } from "framer-motion";
 
 type ProjectCardProps = {
   project: Project;
@@ -8,6 +9,7 @@ type ProjectCardProps = {
 
 export function ProjectCard({ project }: ProjectCardProps) {
   return (
+    <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
     <Link
       href={`/projects/${project.id}`}
       className="group block rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-zinc-300 hover:shadow-md"
@@ -32,5 +34,6 @@ export function ProjectCard({ project }: ProjectCardProps) {
         </div>
       </div>
     </Link>
+    </motion.div>
   );
 }

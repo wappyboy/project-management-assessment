@@ -4,6 +4,7 @@ import { useDraggable } from "@dnd-kit/core";
 import { Task } from "@/features/tasks/tasks.types";
 import { TaskStatus } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 
 type TaskCardProps = {
   task: Task;
@@ -37,15 +38,17 @@ export function TaskCard({ task }: TaskCardProps) {
     : undefined;
 
   return (
-    <article
+    <motion.article
       ref={setNodeRef}
-      style={style}
-      {...listeners}
-      {...attributes}
-      className={cn(
-        "cursor-grab rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm transition active:cursor-grabbing",
-        isDragging && "opacity-60 ring-2 ring-zinc-300"
-      )}
+        style={style}
+        {...listeners}
+        {...attributes}
+        whileHover={{ scale: 1.01 }}
+        transition={{ duration: 0.15 }}
+        className={cn(
+            "touch-none cursor-grab rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm transition active:cursor-grabbing",
+            isDragging && "z-50 opacity-70 ring-2 ring-zinc-400"
+        )}
     >
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-sm font-semibold text-zinc-950">{task.name}</h3>
@@ -65,6 +68,6 @@ export function TaskCard({ task }: TaskCardProps) {
       <p className="mt-4 text-xs font-medium text-zinc-400">
         Task ID: {task.id}
       </p>
-    </article>
+    </motion.article>
   );
 }

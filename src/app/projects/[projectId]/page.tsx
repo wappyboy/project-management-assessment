@@ -25,6 +25,7 @@ import { TaskBoard } from "@/components/tasks/TaskBoard";
 import { ChangeLogList } from "@/components/logs/ChangeLogList";
 import { Button } from "@/components/ui/Button";
 import { StatCard } from "@/components/ui/StatCard";
+import { MotionContainer } from "@/components/ui/MotionContainer";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";export default function ProjectDetailPage() {
   const router = useRouter();
   const params = useParams();
@@ -231,6 +232,7 @@ if (isInvalidProjectId) {
       />
 
       <section className="mx-auto max-w-6xl px-4 py-8">
+        <MotionContainer>
        <ErrorMessage message={error} className="mb-5" />
 
        {isEditingProject && project ? (
@@ -279,7 +281,9 @@ if (isInvalidProjectId) {
         </div>
           </div>
         </div>
+        </MotionContainer>
       </section>
+      
     </main>
   );
 }
