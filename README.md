@@ -413,7 +413,7 @@ Reusable components such as `Button`, `Input`, `PageHeader`, `StatCard`, `ErrorM
 | Change logs for task updates | Completed |
 | Fetch change log history | Completed |
 | README documentation | Completed |
-| Hosted deployment | Optional / Provided if available |
+| Hosted deployment | Completed |
 
 ---
 
