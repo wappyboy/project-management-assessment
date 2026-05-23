@@ -1,19 +1,19 @@
 export type Project = {
-    project_id: number;
-    user_id: string;
-    name: string;
-    description: string;
+  id: number;
+  name: string;
+  description: string;
+  created_at?: string;
 };
 
 export type CreateProjectPayload = {
-    user_id: string;
-    name: string;
-    description: string;
+  user_id: string;
+  name: string;
+  description: string;
 };
 
 export type PatchProjectPayload = {
-    project_id: number;
-    user_id?: string;
-    name?: string;
-    description?: string;
+  project_id: number;
+  user_id?: string;
+  name?: string;
+  description?: string;
 };
