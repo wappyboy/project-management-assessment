@@ -1,3 +1,6 @@
+"use client";
+
+import { useDraggable } from "@dnd-kit/core";
 import { Task } from "@/features/tasks/tasks.types";
 import { TaskStatus } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -19,8 +22,31 @@ function getStatusBadgeClass(status: TaskStatus) {
 }
 
 export function TaskCard({ task }: TaskCardProps) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } =
+    useDraggable({
+      id: task.id,
+      data: {
+        task,
+      },
+    });
+
+  const style = transform
+    ? {
+        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+      }
+    : undefined;
+
   return (
-    <article className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+    <article
+      ref={setNodeRef}
+      style={style}
+      {...listeners}
+      {...attributes}
+      className={cn(
+        "cursor-grab rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm transition active:cursor-grabbing",
+        isDragging && "opacity-60 ring-2 ring-zinc-300"
+      )}
+    >
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-sm font-semibold text-zinc-950">{task.name}</h3>
 

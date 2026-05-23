@@ -1,11 +1,12 @@
 import { TaskStatus } from "@/lib/constants";
 
 export type ChangeLog = {
-  changelog_id?: number;
+  id: number;
   task_id: number;
   old_status: TaskStatus;
   new_status: TaskStatus;
   remark: string;
+  created_at?: string;
 };
 
 export type CreateChangeLogPayload = {
@@ -16,7 +17,7 @@ export type CreateChangeLogPayload = {
 };
 
 export type UpdateChangeLogPayload = {
-  changelog_id?: number;
+  id?: number;
   task_id?: number;
   old_status?: TaskStatus;
   new_status?: TaskStatus;

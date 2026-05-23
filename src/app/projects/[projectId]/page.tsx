@@ -11,7 +11,14 @@ import { Task } from "@/features/tasks/tasks.types";
 import { TaskForm } from "@/components/tasks/TaskForm";
 import { TaskBoard } from "@/components/tasks/TaskBoard";
 import { Button } from "@/components/ui/Button";
-
+import { patchTask } from "@/features/tasks/tasks.api";
+import { TaskStatus } from "@/lib/constants";
+import { ChangeLog } from "@/features/change-logs/changeLogs.types";
+import { ChangeLogList } from "@/components/logs/ChangeLogList";
+import {
+  createChangeLog,
+  getAllChangeLogs,
+} from "@/features/change-logs/changelogs.api";
 export default function ProjectDetailPage() {
   const router = useRouter();
   const params = useParams();
@@ -23,10 +30,20 @@ export default function ProjectDetailPage() {
   const [isLoadingProject, setIsLoadingProject] = useState(true);
   const [isLoadingTasks, setIsLoadingTasks] = useState(false);
   const [error, setError] = useState("");
+  const [changeLogs, setChangeLogs] = useState<ChangeLog[]>([]);
+  const [isLoadingLogs, setIsLoadingLogs] = useState(false);
 
   const projectTasks = useMemo(() => {
     return tasks.filter((task) => task.project_id === projectId);
   }, [tasks, projectId]);
+
+  const projectTaskIds = useMemo(() => {
+  return new Set(projectTasks.map((task) => task.id));
+}, [projectTasks]);
+
+const projectChangeLogs = useMemo(() => {
+  return changeLogs.filter((log) => projectTaskIds.has(log.task_id));
+}, [changeLogs, projectTaskIds]);
 
   const fetchProject = useCallback(async () => {
     try {
@@ -66,6 +83,60 @@ export default function ProjectDetailPage() {
     }
   }, []);
 
+    const fetchChangeLogs = useCallback(async () => {
+    try {
+      setIsLoadingLogs(true);
+
+      const logs = await getAllChangeLogs();
+
+      console.log("Cleaned change logs:", logs);
+
+      setChangeLogs(logs);
+    } catch (error) {
+      console.error(error);
+      setError("Failed to load change logs.");
+    } finally {
+      setIsLoadingLogs(false);
+    }
+  }, []);
+
+  async function handleTaskStatusChange(task: Task, newStatus: TaskStatus) {
+  const oldStatus = task.status;
+
+  if (oldStatus === newStatus) return;
+
+  const previousTasks = tasks;
+
+  const updatedTasks = tasks.map((item) =>
+    item.id === task.id ? { ...item, status: newStatus } : item
+  );
+
+  setTasks(updatedTasks);
+
+  try {
+    await patchTask({
+      task_id: task.id,
+      name: task.name,
+      status: newStatus,
+      contents: task.contents,
+    });
+
+    await createChangeLog({
+      task_id: task.id,
+      old_status: oldStatus,
+      new_status: newStatus,
+      remark: `Task "${task.name}" moved from ${oldStatus} to ${newStatus}.`,
+    });
+
+    await fetchChangeLogs();
+
+  } catch (error) {
+    console.error(error);
+    setTasks(previousTasks);
+    setError("Failed to update task status. Please try again.");
+  }
+}
+
   useEffect(() => {
     const authUser = getAuthUser();
 
@@ -81,7 +152,8 @@ export default function ProjectDetailPage() {
 
     fetchProject();
     fetchTasks();
-  }, [router, projectId, fetchProject, fetchTasks]);
+    fetchChangeLogs();
+  }, [router, projectId, fetchProject, fetchTasks, fetchChangeLogs]);
 
   if (isLoadingProject) {
     return (
@@ -168,7 +240,15 @@ export default function ProjectDetailPage() {
               </p>
             </div>
 
-            <TaskBoard tasks={projectTasks} isLoading={isLoadingTasks} />
+            <TaskBoard
+            tasks={projectTasks}
+            isLoading={isLoadingTasks}
+            onTaskStatusChange={handleTaskStatusChange}
+          />
+
+          <div className="mt-8">
+          <ChangeLogList logs={projectChangeLogs} isLoading={isLoadingLogs} />
+        </div>
           </div>
         </div>
       </section>

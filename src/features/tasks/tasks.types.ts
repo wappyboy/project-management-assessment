@@ -1,7 +1,7 @@
 import { TaskStatus } from "@/lib/constants";
 
 export type Task = {
-  task_id: number;
+  id: number;
   project_id: number;
   name: string;
   status: TaskStatus;
