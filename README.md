@@ -17,7 +17,7 @@ Vercel Deployment:
 GitHub Repository:
 
 ```txt
-https://github.com/wappyboy/project-management-assessment.git)
+(https://github.com/wappyboy/project-management-assessment.git)
 ```
 
 ---
