@@ -12,8 +12,7 @@ export type CreateProjectPayload = {
 };
 
 export type PatchProjectPayload = {
-  project_id: number;
-  user_id?: string;
-  name?: string;
-  description?: string;
+  id: number;
+  name: string;
+  description: string;
 };

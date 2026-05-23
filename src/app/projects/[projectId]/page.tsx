@@ -1,30 +1,36 @@
 "use client";
 
-import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getAuthUser } from "@/features/auth/auth.storage";
+
+import { AuthUser, getAuthUser } from "@/features/auth/auth.storage";
 import { getProject } from "@/features/projects/projects.api";
 import { Project } from "@/features/projects/projects.types";
-import { getAllTasks } from "@/features/tasks/tasks.api";
+
+import { getAllTasks, patchTask } from "@/features/tasks/tasks.api";
 import { Task } from "@/features/tasks/tasks.types";
-import { TaskForm } from "@/components/tasks/TaskForm";
-import { TaskBoard } from "@/components/tasks/TaskBoard";
-import { Button } from "@/components/ui/Button";
-import { patchTask } from "@/features/tasks/tasks.api";
-import { TaskStatus } from "@/lib/constants";
-import { ChangeLog } from "@/features/change-logs/changeLogs.types";
-import { ChangeLogList } from "@/components/logs/ChangeLogList";
+
 import {
   createChangeLog,
   getAllChangeLogs,
 } from "@/features/change-logs/changelogs.api";
-export default function ProjectDetailPage() {
+import { ChangeLog } from "@/features/change-logs/changeLogs.types";
+
+import { TaskStatus } from "@/lib/constants";
+
+import { PageHeader } from "@/components/layout/PageHeader";
+import { ProjectEditForm } from "@/components/projects/ProjectEditForm";
+import { TaskForm } from "@/components/tasks/TaskForm";
+import { TaskBoard } from "@/components/tasks/TaskBoard";
+import { ChangeLogList } from "@/components/logs/ChangeLogList";
+import { Button } from "@/components/ui/Button";
+import { StatCard } from "@/components/ui/StatCard";
+import { ErrorMessage } from "@/components/ui/ErrorMessage";export default function ProjectDetailPage() {
   const router = useRouter();
   const params = useParams();
 
   const projectId = Number(params.projectId);
-
+  const isInvalidProjectId = !projectId || Number.isNaN(projectId);
   const [project, setProject] = useState<Project | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoadingProject, setIsLoadingProject] = useState(true);
@@ -32,7 +38,8 @@ export default function ProjectDetailPage() {
   const [error, setError] = useState("");
   const [changeLogs, setChangeLogs] = useState<ChangeLog[]>([]);
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
-
+  const [authUser] = useState<AuthUser | null>(() => getAuthUser());  const [isEditingProject, setIsEditingProject] = useState(false);
+  const hasFetchedInitialData = useRef(false);
   const projectTasks = useMemo(() => {
     return tasks.filter((task) => task.project_id === projectId);
   }, [tasks, projectId]);
@@ -71,9 +78,6 @@ const projectChangeLogs = useMemo(() => {
       setIsLoadingTasks(true);
 
       const taskList = await getAllTasks();
-
-    console.log("Tasks from API:", taskList);
-    console.table(taskList.slice(0, 5));
       setTasks(taskList);
     } catch (error) {
       console.error(error);
@@ -89,7 +93,6 @@ const projectChangeLogs = useMemo(() => {
 
       const logs = await getAllChangeLogs();
 
-      console.log("Cleaned change logs:", logs);
 
       setChangeLogs(logs);
     } catch (error) {
@@ -137,23 +140,59 @@ const projectChangeLogs = useMemo(() => {
   }
 }
 
-  useEffect(() => {
-    const authUser = getAuthUser();
+  function handleProjectUpdated(updatedProject: Project) {
+    setProject(updatedProject);
+    setIsEditingProject(false);
+  }
 
+  useEffect(() => {
     if (!authUser) {
       router.replace("/login");
       return;
     }
 
-    if (!projectId || Number.isNaN(projectId)) {
-      setError("Invalid project ID.");
+    if (isInvalidProjectId) {
       return;
     }
 
-    fetchProject();
-    fetchTasks();
-    fetchChangeLogs();
-  }, [router, projectId, fetchProject, fetchTasks, fetchChangeLogs]);
+    if (!hasFetchedInitialData.current) {
+      hasFetchedInitialData.current = true;
+
+      fetchProject();
+      fetchTasks();
+      fetchChangeLogs();
+    }
+  }, [
+    router,
+    authUser,
+    isInvalidProjectId,
+    fetchProject,
+    fetchTasks,
+    fetchChangeLogs,
+  ]);
+
+  if (!authUser) {
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-zinc-50">
+      <p className="text-sm text-zinc-500">Redirecting to login...</p>
+    </main>
+  );
+}
+
+if (isInvalidProjectId) {
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-zinc-50">
+      <div className="rounded-3xl border border-zinc-200 bg-white p-6 text-center shadow-sm">
+        <h1 className="text-lg font-semibold text-zinc-950">
+          Invalid project
+        </h1>
+        <p className="mt-2 text-sm text-zinc-500">
+          The selected project ID is invalid.
+        </p>
+      </div>
+    </main>
+  );
+}
 
   if (isLoadingProject) {
     return (
@@ -165,67 +204,56 @@ const projectChangeLogs = useMemo(() => {
 
   return (
     <main className="min-h-screen bg-zinc-50">
-      <header className="border-b border-zinc-200 bg-white">
-        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-5 md:flex-row md:items-center md:justify-between">
-          <div>
-            <Link
-              href="/dashboard"
-              className="text-sm font-medium text-zinc-500 hover:text-zinc-950"
-            >
-              ← Back to dashboard
-            </Link>
+            <PageHeader
+        title={project?.name ?? `Project #${projectId}`}
+        description={project?.description ?? "Manage tasks for this project."}
+        backHref="/dashboard"
+        backLabel="Back to dashboard"
+        action={
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <Button
+          type="button"
+          onClick={() => setIsEditingProject(true)}
+          className="w-fit bg-white text-zinc-950 ring-1 ring-zinc-200 hover:bg-zinc-100"
+        >
+          Edit project
+        </Button>
 
-            <h1 className="mt-3 text-2xl font-semibold text-zinc-950">
-              {project?.name ?? `Project #${projectId}`}
-            </h1>
-
-            <p className="mt-1 max-w-2xl text-sm leading-6 text-zinc-500">
-              {project?.description ?? "Manage tasks for this project."}
-            </p>
-          </div>
-
-          <Button
-            type="button"
-            onClick={fetchTasks}
-            className="w-fit bg-zinc-100 text-zinc-950 hover:bg-zinc-200"
-          >
-            Refresh tasks
-          </Button>
-        </div>
-      </header>
+        <Button
+          type="button"
+          onClick={fetchTasks}
+          className="w-fit bg-zinc-100 text-zinc-950 hover:bg-zinc-200"
+        >
+          Refresh tasks
+        </Button>
+      </div>
+    }
+      />
 
       <section className="mx-auto max-w-6xl px-4 py-8">
-        {error ? (
-          <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-            {error}
-          </div>
-        ) : null}
+       <ErrorMessage message={error} className="mb-5" />
 
-        <div className="mb-8 grid gap-4 md:grid-cols-3">
-          <div className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
-            <p className="text-sm text-zinc-500">Total tasks</p>
-            <h2 className="mt-2 text-3xl font-semibold text-zinc-950">
-              {projectTasks.length}
-            </h2>
-          </div>
+       {isEditingProject && project ? (
+      <ProjectEditForm
+      project={project}
+      onCancel={() => setIsEditingProject(false)}
+      onProjectUpdated={handleProjectUpdated}
+    />
+    ) : null}
 
-          <div className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
-            <p className="text-sm text-zinc-500">In progress</p>
-            <h2 className="mt-2 text-3xl font-semibold text-zinc-950">
-              {
-                projectTasks.filter((task) => task.status === "In Progress")
-                  .length
-              }
-            </h2>
-          </div>
+       <div className="mb-8 grid gap-4 md:grid-cols-3">
+  <StatCard label="Total tasks" value={projectTasks.length} />
 
-          <div className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
-            <p className="text-sm text-zinc-500">Done</p>
-            <h2 className="mt-2 text-3xl font-semibold text-zinc-950">
-              {projectTasks.filter((task) => task.status === "Done").length}
-            </h2>
-          </div>
-        </div>
+  <StatCard
+    label="In progress"
+    value={projectTasks.filter((task) => task.status === "In Progress").length}
+  />
+
+  <StatCard
+    label="Done"
+    value={projectTasks.filter((task) => task.status === "Done").length}
+  />
+</div>
 
         <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
           <TaskForm projectId={projectId} onTaskCreated={fetchTasks} />

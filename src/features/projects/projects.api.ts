@@ -5,9 +5,11 @@ import {
   Project,
 } from "./projects.types";
 
-type ApiResponse<T> = {
-  data: T;
-};
+let cachedProjects: Project[] | null = null;
+let lastFetchedAt = 0;
+
+const PROJECT_CACHE_DURATION = 30_000;
+
 
 export async function createProject(payload: CreateProjectPayload) {
   const response = await api.post("/test02/create_project", payload);
@@ -15,41 +17,31 @@ export async function createProject(payload: CreateProjectPayload) {
 }
 
 export async function getAllProjects(): Promise<Project[]> {
-  const response = await api.get<ApiResponse<Project[]> | Project[]>(
-    "/test02/get_all_project"
-  );
+  const now = Date.now();
 
-  if (Array.isArray(response.data)) {
-    return response.data;
+  if (cachedProjects && now - lastFetchedAt < PROJECT_CACHE_DURATION) {
+    return cachedProjects;
   }
 
-  return response.data.data ?? [];
-}
-
-export async function getAllProject(): Promise<Project[]> {
   const response = await api.get("/test02/get_all_project");
 
-  console.log("Raw get all projects response:", response.data);
+  let projects: Project[] = [];
 
   if (Array.isArray(response.data)) {
-    return response.data;
+    projects = response.data;
+  } else if (Array.isArray(response.data.data)) {
+    projects = response.data.data;
+  } else if (Array.isArray(response.data.projects)) {
+    projects = response.data.projects;
+  } else if (Array.isArray(response.data.data?.data)) {
+    projects = response.data.data.data;
   }
 
-  if (Array.isArray(response.data.data)) {
-    return response.data.data;
-  }
+  cachedProjects = projects;
+  lastFetchedAt = now;
 
-  if (Array.isArray(response.data.projects)) {
-    return response.data.projects;
-  }
-
-  if (Array.isArray(response.data.data?.data)) {
-    return response.data.data.data;
-  }
-
-  return [];
+  return projects;
 }
-
 export async function getProject(projectId: number): Promise<Project | null> {
   const projects = await getAllProjects();
 
@@ -60,5 +52,13 @@ export async function getProject(projectId: number): Promise<Project | null> {
 
 export async function patchProject(payload: PatchProjectPayload) {
   const response = await api.patch("/test02/patch_project", payload);
+
+  clearProjectsCache();
+
   return response.data;
+}
+
+export function clearProjectsCache() {
+  cachedProjects = null;
+  lastFetchedAt = 0;
 }

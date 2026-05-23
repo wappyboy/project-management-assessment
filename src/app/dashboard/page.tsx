@@ -1,6 +1,5 @@
 "use client";
-
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   clearAuthUser,
@@ -12,15 +11,16 @@ import { Project } from "@/features/projects/projects.types";
 import { ProjectForm } from "@/components/projects/ProjectForm";
 import { ProjectList } from "@/components/projects/ProjectList";
 import { Button } from "@/components/ui/Button";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { ErrorMessage } from "@/components/ui/ErrorMessage";
 
 export default function DashboardPage() {
   const router = useRouter();
 
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [isCheckingSession, setIsCheckingSession] = useState(true);
+  const [user] = useState<AuthUser | null>(() => getAuthUser());  const [projects, setProjects] = useState<Project[]>([]);
   const [isLoadingProjects, setIsLoadingProjects] = useState(false);
   const [projectError, setProjectError] = useState("");
+  const hasFetchedProjects = useRef(false);
 
 const userProjects = useMemo(() => {
   return projects;
@@ -33,9 +33,6 @@ const fetchProjects = useCallback(async () => {
 
     const projectList = await getAllProjects();
 
-    console.log("Cleaned projects list:", projectList);
-    console.log("Is projectList array?", Array.isArray(projectList));
-
     setProjects(projectList);
   } catch (error) {
     console.error(error);
@@ -45,58 +42,52 @@ const fetchProjects = useCallback(async () => {
   }
 }, []);
 
-  useEffect(() => {
-    const authUser = getAuthUser();
+ useEffect(() => {
+  if (!user) {
+    router.replace("/login");
+    return;
+  }
 
-    if (!authUser) {
-      router.replace("/login");
-      return;
-    }
-
-    setUser(authUser);
-    setIsCheckingSession(false);
+  if (!hasFetchedProjects.current) {
+    hasFetchedProjects.current = true;
     fetchProjects();
-  }, [router, fetchProjects]);
+  }
+}, [router, user, fetchProjects]);
 
   function handleLogout() {
     clearAuthUser();
     router.push("/login");
   }
 
-  if (isCheckingSession) {
+    if (!user) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-zinc-50">
-        <p className="text-sm text-zinc-500">Checking session...</p>
+        <p className="text-sm text-zinc-500">Redirecting to login...</p>
       </main>
     );
   }
 
   return (
     <main className="min-h-screen bg-zinc-50">
-      <header className="border-b border-zinc-200 bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-          <div>
-            <p className="text-sm text-zinc-500">Project Management Tool</p>
-            <h1 className="text-xl font-semibold text-zinc-950">Dashboard</h1>
-          </div>
+        <PageHeader
+      title="Dashboard"
+      description="Manage your projects and continue your assessment workflow."
+      action={
+        <div className="flex items-center gap-3">
+          <p className="hidden text-sm text-zinc-500 sm:block">
+            Signed in as{" "}
+            <span className="font-medium text-zinc-950">{user?.user_id}</span>
+          </p>
 
-          <div className="flex items-center gap-3">
-            <p className="hidden text-sm text-zinc-500 sm:block">
-              Signed in as{" "}
-              <span className="font-medium text-zinc-950">
-                {user?.user_id}
-              </span>
-            </p>
-
-            <Button
-              onClick={handleLogout}
-              className="bg-zinc-100 text-zinc-950 hover:bg-zinc-200"
-            >
-              Logout
-            </Button>
-          </div>
+          <Button
+            onClick={handleLogout}
+            className="bg-zinc-100 text-zinc-950 hover:bg-zinc-200"
+          >
+            Logout
+          </Button>
         </div>
-      </header>
+      }
+    />
 
       <section className="mx-auto max-w-6xl px-4 py-8">
         <div className="mb-8 grid gap-4 md:grid-cols-3">
@@ -146,12 +137,8 @@ const fetchProjects = useCallback(async () => {
               </Button>
             </div>
 
-            {projectError ? (
-              <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                {projectError}
-              </div>
-            ) : null}
-
+           <ErrorMessage message={projectError} className="mb-4" />
+           
             <ProjectList
               projects={userProjects}
               isLoading={isLoadingProjects}
