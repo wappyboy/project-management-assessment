@@ -4,9 +4,13 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { login } from "@/features/auth/auth.api";
-import { saveAuthUser } from "@/features/auth/auth.storage";
+import {
+  getStoredMembers,
+  saveAuthUser,
+} from "@/features/auth/auth.storage";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { getAllMember } from "@/features/members/members.api";
 
 type LoginFormState = {
   user_id: string;
@@ -40,37 +44,52 @@ export function LoginForm() {
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  event.preventDefault();
 
-    const validationError = validateForm();
+  const validationError = validateForm();
 
-    if (validationError) {
-      setError(validationError);
+  if (validationError) {
+    setError(validationError);
+    return;
+  }
+
+  try {
+    setIsSubmitting(true);
+    setError("");
+
+    const userId = form.user_id.trim();
+    const password = form.password.trim();
+
+    const storedMembers = getStoredMembers();
+
+    const existingMember = storedMembers.find(
+      (member) =>
+        member.user_id.trim() === userId &&
+        member.password.trim() === password
+    );
+
+    if (!existingMember) {
+      setError("Invalid User ID or password.");
       return;
     }
 
-    try {
-      setIsSubmitting(true);
-      setError("");
+    await login({
+      user_id: userId,
+      password,
+    });
 
-      await login({
-        user_id: form.user_id.trim(),
-        password: form.password,
-      });
+    saveAuthUser({
+      user_id: userId,
+    });
 
-      saveAuthUser({
-        user_id: form.user_id.trim(),
-      });
-
-      router.push("/dashboard");
-    } catch (error) {
-      console.error(error);
-      setError("Login failed. Please check your User ID and password.");
-    } finally {
-      setIsSubmitting(false);
-    }
+    router.push("/dashboard");
+  } catch (error) {
+    console.error(error);
+    setError("Login failed. Please check your User ID and password.");
+  } finally {
+    setIsSubmitting(false);
   }
-
+}
   return (
     <div className="w-full max-w-md rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
       <div className="mb-6">

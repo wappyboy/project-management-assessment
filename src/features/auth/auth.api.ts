@@ -1,15 +1,15 @@
 import { api } from "@/lib/api";
 
-export type LoginPayLoad = {
-    user_id: string;
-    password_id: string;
-}
-
-export type LoginResponse = {
-    data: unknown;
+export type LoginPayload = {
+  user_id: string;
+  password: string;
 };
 
-export async function login(payload: LoginPayLoad): Promise<LoginResponse> {
-    const response = await api.post("/testlogin", payload);
-    return response.data;
+export type LoginResponse = {
+  data: unknown;
+};
+
+export async function login(payload: LoginPayload): Promise<LoginResponse> {
+  const response = await api.post<LoginResponse>("/testlogin", payload);
+  return response.data;
 }

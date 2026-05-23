@@ -11,7 +11,7 @@ export async function createMember(payload: CreateMemberPayload) {
 }
 
 export async function getAllMember(): Promise<Member[]> {
-    const response = await api.get("/test01/get_all_members");
+    const response = await api.get("/test01/get_all_member");
     return response.data.data ?? response.data;
 }
 

@@ -4,9 +4,13 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createMember } from "@/features/members/members.api";
-import { saveAuthUser } from "@/features/auth/auth.storage";
+import {
+  saveAuthUser,
+  saveStoredMember,
+} from "@/features/auth/auth.storage";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { getAllMember } from "@/features/members/members.api";
 
 type RegisterFormState = {
   user_id: string;
@@ -46,38 +50,67 @@ export function RegisterForm() {
     return "";
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+ async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  event.preventDefault();
 
-    const validationError = validateForm();
+  const validationError = validateForm();
 
-    if (validationError) {
-      setError(validationError);
+  if (validationError) {
+    setError(validationError);
+    return;
+  }
+
+  try {
+    setIsSubmitting(true);
+    setError("");
+
+    const userId = form.user_id.trim();
+    const email = form.email.trim();
+
+    const members = await getAllMember();
+
+    const userIdAlreadyExists = members.some(
+      (member) => member.user_id === userId
+    );
+
+    if (userIdAlreadyExists) {
+      setError("This User ID is already taken. Please choose another one.");
       return;
     }
 
-    try {
-      setIsSubmitting(true);
-      setError("");
+    const emailAlreadyExists = members.some(
+      (member) => member.email === email
+    );
 
-      await createMember({
-        user_id: form.user_id.trim(),
-        email: form.email.trim(),
-        password: form.password,
-      });
-
-      saveAuthUser({
-        user_id: form.user_id.trim(),
-      });
-
-      router.push("/dashboard");
-    } catch (error) {
-      console.error(error);
-      setError("Registration failed. Please check your details and try again.");
-    } finally {
-      setIsSubmitting(false);
+    if (emailAlreadyExists) {
+      setError("This email is already registered. Please use another email.");
+      return;
     }
+
+        await createMember({
+        user_id: userId,
+        email,
+        password: form.password,
+        });
+
+        saveStoredMember({
+        user_id: userId,
+        email,
+        password: form.password,
+        });
+
+        saveAuthUser({
+        user_id: userId,
+        });
+
+    router.push("/dashboard");
+  } catch (error) {
+    console.error(error);
+    setError("Registration failed. Please check your details and try again.");
+  } finally {
+    setIsSubmitting(false);
   }
+}
 
   return (
     <div className="w-full max-w-md rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm">
