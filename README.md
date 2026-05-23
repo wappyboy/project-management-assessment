@@ -21,6 +21,10 @@ GitHub Repository:
 ```
 
 ---
+## Architecture that i used
+## Feature-based frontend architecture
+- **Component-based UI architecture**
+- **Service layer for API integration**
 
 ## Tech Stack
 
