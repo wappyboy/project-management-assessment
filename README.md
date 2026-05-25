@@ -234,7 +234,7 @@ Create a `.env.local` file in the root directory:
 
 
 ```env
-NEXT_PUBLIC_API_BASE_URL=ProvidedAPI
+NEXT_PUBLIC_API_BASE_URL=<providedAPI>
 ```
 
 ### 4. Run the development server
