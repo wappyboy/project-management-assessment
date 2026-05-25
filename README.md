@@ -99,9 +99,6 @@ This project follows a feature-based frontend architecture with:
 
 The project uses the backend API provided in the assessment:
 
-```txt
-https://m-backend.dowinnsys.com/api_test
-```
 
 Main endpoints used:
 
@@ -235,14 +232,9 @@ npm install
 
 Create a `.env.local` file in the root directory:
 
-```env
-NEXT_PUBLIC_API_BASE_URL=https://m-backend.dowinnsys.com/api_test
-```
-
-If API requests fail depending on the backend configuration, use:
 
 ```env
-NEXT_PUBLIC_API_BASE_URL=https://m-backend.dowinnsys.com
+NEXT_PUBLIC_API_BASE_URL=ProvidedAPI
 ```
 
 ### 4. Run the development server
