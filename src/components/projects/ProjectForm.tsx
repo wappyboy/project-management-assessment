@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/Input";
 type ProjectFormProps = {
   user: AuthUser;
   onProjectCreated: (project: Project) => void;
-  onProjectFailed: (projectId: number) => void;
+  onProjectFailed?: (projectId: number) => void;
 };
 
 type ProjectFormState = {
@@ -83,7 +83,7 @@ async function handleSubmit(event: FormEvent<HTMLFormElement>) {
   } catch (error) {
     console.error(error);
     setError("Failed to create project. Please try again.");
-    onProjectFailed(tempId); 
+    onProjectFailed?.(tempId); 
   } finally {
     setIsSubmitting(false);
   }
