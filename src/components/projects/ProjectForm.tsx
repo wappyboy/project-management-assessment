@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/Input";
 
 type ProjectFormProps = {
   user: AuthUser;
-  onProjectCreated: (project: Project) => void;
+  onProjectCreated: (project: Project, tempId: number) => void;
   onProjectFailed?: (projectId: number) => void;
 };
 
@@ -46,7 +46,7 @@ export function ProjectForm({ user, onProjectCreated, onProjectFailed }: Project
   }
 
 
- // In handleSubmit, generate a temp id for the optimistic item
+
 async function handleSubmit(event: FormEvent<HTMLFormElement>) {
   event.preventDefault();
 
@@ -68,7 +68,7 @@ async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     setIsSubmitting(true);
     setError("");
 
-    onProjectCreated(optimisticProject);
+    onProjectCreated(optimisticProject, tempId); // ← pass tempId
     setForm(initialFormState);
 
     const newProject = await createProject({
@@ -77,18 +77,16 @@ async function handleSubmit(event: FormEvent<HTMLFormElement>) {
       description: form.description.trim(),
     });
 
-    
-    onProjectCreated(newProject); 
+    onProjectCreated(newProject, tempId); // ← pass tempId so parent can remove temp
 
   } catch (error) {
     console.error(error);
     setError("Failed to create project. Please try again.");
-    onProjectFailed?.(tempId); 
+    onProjectFailed?.(tempId);
   } finally {
     setIsSubmitting(false);
   }
 }
-
   return (
     <div className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
       <div className="mb-5">

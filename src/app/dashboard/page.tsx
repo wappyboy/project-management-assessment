@@ -123,15 +123,22 @@ const fetchProjects = useCallback(async () => {
           </div>
 
           <div className="grid gap-6 lg:grid-cols-[minmax(280px,360px)_minmax(0,1fr)]">
-            <ProjectForm  user={user}
-              onProjectCreated={(newProject) => {
-          setProjects((prev) => {
-            const exists = prev.some((p) => p.id === newProject.id);
-            if (exists) return prev;
-            return [newProject, ...prev];
-          });
-        }}
-            />
+                  <ProjectForm
+          user={user}
+              onProjectCreated={(newProject, tempId) => {
+        setProjects((prev) => {
+          const withoutTemp = prev.filter((p) => p.id !== tempId);
+
+          const exists = withoutTemp.some((p) => p.id === newProject.id);
+          if (exists) return withoutTemp;
+
+          return [newProject, ...withoutTemp];
+        });
+      }}
+          onProjectFailed={(tempId) => {
+            setProjects((prev) => prev.filter((p) => p.id !== tempId));
+          }}
+        />
 
             <div className="min-w-0">
               <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">

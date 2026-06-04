@@ -104,7 +104,7 @@ export function ProjectList({ projects, isLoading }: ProjectListProps) {
         <div className="rounded-3xl border border-dashed border-zinc-300 bg-white p-8 text-center shadow-sm">
           <h3 className="text-base font-semibold text-zinc-950">No results found</h3>
           <p className="mt-2 text-sm text-zinc-500">
-            No projects match <span className="font-medium">"{search}"</span>. Try a different search.
+            No projects match <span className="font-medium">{search}</span>. Try a different search.
           </p>
         </div>
       ) : (
