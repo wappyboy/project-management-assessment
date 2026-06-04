@@ -56,6 +56,7 @@ This project follows a feature-based frontend architecture with:
 - Create projects
 - View project list
 - Open project detail page
+- Search projects by name
 - Update/edit project name and description
 - Manage tasks within each project
 - Paginated project list for better usability
