@@ -33,20 +33,26 @@ export default function DashboardPage() {
     return projects;
   }, [projects]);
 
-  const fetchProjects = useCallback(async () => {
-    try {
-      setIsLoadingProjects(true);
-      setProjectError("");
+const fetchProjects = useCallback(async () => {
+  try {
+    setIsLoadingProjects(true);
+    setProjectError("");
 
-      const projectList = await getAllProjects();
-      setProjects(projectList);
-    } catch (error) {
-      console.error(error);
-      setProjectError("Failed to load projects. Please try again.");
-    } finally {
-      setIsLoadingProjects(false);
-    }
-  }, []);
+    const projectList = await getAllProjects();
+
+    setProjects((prev) => {
+      const serverIds = new Set(projectList.map((p) => p.id));
+      const optimisticOnly = prev.filter((p) => !serverIds.has(p.id));
+      return [...optimisticOnly, ...projectList];
+    });
+  } catch (error) {
+    console.error(error);
+    setProjectError("Failed to load projects. Please try again.");
+  } finally {
+    setIsLoadingProjects(false);
+  }
+  
+}, []);
 
   useEffect(() => {
     if (!user) {
@@ -117,7 +123,15 @@ export default function DashboardPage() {
           </div>
 
           <div className="grid gap-6 lg:grid-cols-[minmax(280px,360px)_minmax(0,1fr)]">
-            <ProjectForm user={user} onProjectCreated={fetchProjects} />
+            <ProjectForm  user={user}
+              onProjectCreated={(newProject) => {
+          setProjects((prev) => {
+            const exists = prev.some((p) => p.id === newProject.id);
+            if (exists) return prev;
+            return [newProject, ...prev];
+          });
+        }}
+            />
 
             <div className="min-w-0">
               <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">

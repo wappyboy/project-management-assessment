@@ -2,13 +2,15 @@
 
 import { FormEvent, useState } from "react";
 import { createProject } from "@/features/projects/projects.api";
+import { Project } from "@/features/projects/projects.types";
 import { AuthUser } from "@/features/auth/auth.storage";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 
 type ProjectFormProps = {
   user: AuthUser;
-  onProjectCreated: () => void;
+  onProjectCreated: (project: Project) => void;
+  onProjectFailed: (projectId: number) => void;
 };
 
 type ProjectFormState = {
@@ -21,10 +23,13 @@ const initialFormState: ProjectFormState = {
   description: "",
 };
 
-export function ProjectForm({ user, onProjectCreated }: ProjectFormProps) {
+
+
+export function ProjectForm({ user, onProjectCreated, onProjectFailed }: ProjectFormProps) {
   const [form, setForm] = useState<ProjectFormState>(initialFormState);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
 
   function updateField(field: keyof ProjectFormState, value: string) {
     setForm((currentForm) => ({
@@ -40,35 +45,49 @@ export function ProjectForm({ user, onProjectCreated }: ProjectFormProps) {
     return "";
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
 
-    const validationError = validateForm();
+ // In handleSubmit, generate a temp id for the optimistic item
+async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  event.preventDefault();
 
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-      setError("");
-
-      await createProject({
-        user_id: user.user_id,
-        name: form.name.trim(),
-        description: form.description.trim(),
-      });
-
-      setForm(initialFormState);
-      onProjectCreated();
-    } catch (error) {
-      console.error(error);
-      setError("Failed to create project. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
+  const validationError = validateForm();
+  if (validationError) {
+    setError(validationError);
+    return;
   }
+
+  const tempId = Date.now();
+
+  const optimisticProject: Project = {
+    id: tempId,
+    name: form.name.trim(),
+    description: form.description.trim(),
+  };
+
+  try {
+    setIsSubmitting(true);
+    setError("");
+
+    onProjectCreated(optimisticProject);
+    setForm(initialFormState);
+
+    const newProject = await createProject({
+      user_id: user.user_id,
+      name: form.name.trim(),
+      description: form.description.trim(),
+    });
+
+    
+    onProjectCreated(newProject); 
+
+  } catch (error) {
+    console.error(error);
+    setError("Failed to create project. Please try again.");
+    onProjectFailed(tempId); 
+  } finally {
+    setIsSubmitting(false);
+  }
+}
 
   return (
     <div className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">

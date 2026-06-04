@@ -13,7 +13,18 @@ const PROJECT_CACHE_DURATION = 30_000;
 
 export async function createProject(payload: CreateProjectPayload) {
   const response = await api.post("/test02/create_project", payload);
-  return response.data;
+  clearProjectsCache();
+
+  const raw = response.data.data;
+
+  const project: Project = {
+    id: raw.project_id,        // ← map project_id → id
+    name: raw.name,
+    description: raw.description,
+    created_at: raw.created_at, // ← may be undefined, that's fine since it's optional
+  };
+
+  return project;
 }
 
 export async function getAllProjects(): Promise<Project[]> {
@@ -22,6 +33,8 @@ export async function getAllProjects(): Promise<Project[]> {
   if (cachedProjects && now - lastFetchedAt < PROJECT_CACHE_DURATION) {
     return cachedProjects;
   }
+
+  
 
   const response = await api.get("/test02/get_all_project");
 
@@ -62,3 +75,4 @@ export function clearProjectsCache() {
   cachedProjects = null;
   lastFetchedAt = 0;
 }
+
